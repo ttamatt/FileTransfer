@@ -2,10 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="65d1097d-0c5c-4c0f-914f-bcb3c168b879" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Config.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Config.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Main.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Main.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Receive.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Receive.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Send.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Send.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/tuhu/Config.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Config.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/tuhu/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/tuhu/Receive.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Receive.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/tuhu/Send.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Send.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -73,7 +79,7 @@
       <option name="presentableId" value="Default" />
       <updated>1576555154930</updated>
       <workItem from="1576555157490" duration="197000" />
-      <workItem from="1576561219941" duration="7468000" />
+      <workItem from="1576561219941" duration="12813000" />
     </task>
     <servers />
   </component>
