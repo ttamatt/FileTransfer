@@ -1,8 +1,13 @@
 package com.tuhu;
 
-public class Main {
+import java.io.IOException;
 
-    public static void main(String[] args) {
-	
+public class Main {
+    public static void main(String[] args) throws IOException, InterruptedException {
+        Receive receive = new Receive();
+        receive.start();
+        new Send().sendFile("/Users/matt/Downloads/123.jpg");
+        receive.join();
     }
+
 }
