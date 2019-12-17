@@ -1,37 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="65d1097d-0c5c-4c0f-914f-bcb3c168b879" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Config.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Config.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Main.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Main.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Receive.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Receive.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Send.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/FileTransfer/com/tuhu/Send.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/tuhu/Config.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Config.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/tuhu/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/tuhu/Receive.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Receive.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/tuhu/Send.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/tuhu/Send.java" afterDir="false" />
-    </list>
+    <list default="true" id="65d1097d-0c5c-4c0f-914f-bcb3c168b879" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Class" />
-      </list>
-    </option>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectId" id="1V5uD8OkF0EKXhjH2IzlYGwaex4" />
   <component name="PropertiesComponent">
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -79,22 +60,10 @@
       <option name="presentableId" value="Default" />
       <updated>1576555154930</updated>
       <workItem from="1576555157490" duration="197000" />
-      <workItem from="1576561219941" duration="12813000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="1" />
-  </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
-          </value>
-        </entry>
-      </map>
-    </option>
   </component>
 </project>
