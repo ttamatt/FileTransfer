@@ -7,7 +7,6 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-
         Send send = new Send();
         Scanner scanner = new Scanner(System.in);
         System.out.println("Input 1 receive, 2 send:");
