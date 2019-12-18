@@ -16,14 +16,15 @@ public class FileRecord {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile("./FileRecordText", "rw");
             fileChannel = randomAccessFile.getChannel();
+            Map<String, String> map = getFileRecord();
+            map.put(md5, index);
+            randomAccessFile.setLength(0);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(map.toString().getBytes());
+            fileChannel.write(byteBuffer);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return;
         }
-        Map<String, String> map = getFileRecord();
-        map.put(md5, index);
-        ByteBuffer byteBuffer = ByteBuffer.wrap(map.toString().getBytes());
-        fileChannel.write(byteBuffer);
     }
 
     public Map<String, String> getFileRecord() {

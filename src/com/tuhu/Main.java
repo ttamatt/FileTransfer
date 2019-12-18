@@ -13,18 +13,18 @@ public class Main {
         switch (scanner.nextLine()) {
             case "1":
                 Receive receive = new Receive();
-                receive.setDaemon(true);
                 receive.start();
-                for (;;) {
-                    if (receive.started) {
-                        System.out.println("Input 'quit' to exit");
-                        if ("quit".equals(scanner.nextLine())) {
-                            return;
-                        }
-                    }else {
-                        Thread.yield();
-                    }
-                }
+//                for (;;) {
+//                    if (receive.started) {
+//                        System.out.println("Input 'quit' to exit");
+//                        if ("quit".equals(scanner.nextLine())) {
+//                            return;
+//                        }
+//                    }else {
+//                        Thread.yield();
+//                    }
+//                }
+                receive.join();
             case "2":
                 send.handleSend();
         }

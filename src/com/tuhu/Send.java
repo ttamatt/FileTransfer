@@ -41,11 +41,14 @@ class Send {
         FileChannel fileChannel = randomAccessFile.getChannel();
         SocketChannel socketChannel;
         try {
+            if(startPosition.equals(fileChannel.size())){
+                System.out.println("This file has been sent before, resending the file.....");
+                startPosition = 0L;
+            }
             socketChannel = SocketChannel.open();
             socketChannel.connect(inetSocketAddress);
-            Long sendIndex = fileChannel.transferTo(startPosition, fileChannel.size(), socketChannel);
+            fileChannel.transferTo(startPosition, fileChannel.size(), socketChannel);
             System.out.println("File has been sent");
-            System.out.println(sendIndex);
             socketChannel.close();
         } catch (Exception e) {
             e.printStackTrace();

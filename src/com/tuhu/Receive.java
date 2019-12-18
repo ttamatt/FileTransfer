@@ -41,10 +41,11 @@ public class Receive extends Thread {
                 SocketChannel socketChannel = serverSocketChannel.accept();
                 if (socketChannel != null) {
                     System.out.println("File receiving......");
-                    FileChannel fileChannel = new RandomAccessFile(Config.outPutLocation, "rw").getChannel();
+                    RandomAccessFile randomAccessFile = new RandomAccessFile(Config.outPutLocation, "rw");
+                    FileChannel fileChannel = randomAccessFile.getChannel();
                     Long receiveIndex = fileChannel.transferFrom(socketChannel, startPosition, 2147483648L);
+                    System.out.println("Receive startPosition:" + String.valueOf(receiveIndex));
                     fileRecord.recordFile(fileMd5, String.valueOf(receiveIndex));
-                    System.out.println(receiveIndex);
                     fileChannel.close();
                     serverSocketChannel.close();
                     System.out.println("File received");
@@ -78,21 +79,21 @@ public class Receive extends Thread {
             SocketChannel socketChannel = serverSocketChannel.accept();
             socketChannel.read(byteBuffer);
             FileRecord fileRecord = new FileRecord();
-            Map<String,String> map = fileRecord.getFileRecord();
+            Map<String, String> map = fileRecord.getFileRecord();
             byte[] md5Bytes = new byte[byteBuffer.position()];
             byteBuffer.rewind();
             byteBuffer.get(md5Bytes);
             String fileMd5 = Base64.getEncoder().encodeToString(md5Bytes);
             ByteBuffer startPositionBuffer;
-            if(map.get(fileMd5)!=null){
+            if (map.get(fileMd5) != null) {
                 startPositionBuffer = ByteBuffer.wrap(map.get(fileMd5).getBytes());
-            }else {
-                startPositionBuffer =ByteBuffer.wrap("0".getBytes());
+            } else {
+                startPositionBuffer = ByteBuffer.wrap("0".getBytes());
             }
             socketChannel.write(startPositionBuffer);
             socketChannel.close();
             serverSocketChannel.close();
-            System.out.println(fileMd5);
+            System.out.println("File MD5 checksum:" + fileMd5);
             return fileMd5;
         } catch (IOException e) {
             e.printStackTrace();
