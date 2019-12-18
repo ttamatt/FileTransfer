@@ -7,12 +7,28 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
+
         Send send = new Send();
-        Receive receive = new Receive();
-        receive.setDaemon(true);
-        receive.start();
-        System.out.println("Server listening at:"+Config.port);
-        send.handleSend();
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Input 1 receive, 2 send:");
+        switch (scanner.nextLine()) {
+            case "1":
+                Receive receive = new Receive();
+                receive.setDaemon(true);
+                receive.start();
+                for (;;) {
+                    if (receive.started) {
+                        System.out.println("Input 'quit' to exit");
+                        if ("quit".equals(scanner.nextLine())) {
+                            return;
+                        }
+                    }else {
+                        Thread.yield();
+                    }
+                }
+            case "2":
+                send.handleSend();
+        }
     }
 
 }

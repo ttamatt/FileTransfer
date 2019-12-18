@@ -8,6 +8,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 public class Receive extends Thread {
+    boolean started = false;
 
     @Override
     public void run() {
@@ -18,6 +19,8 @@ public class Receive extends Thread {
         try {
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.socket().bind(new InetSocketAddress(Config.port));
+            System.out.println("Server listening at:" + Config.port);
+            started = true;
             serverSocketChannel.configureBlocking(false);
             for (; ; ) {
                 SocketChannel socketChannel = serverSocketChannel.accept();
