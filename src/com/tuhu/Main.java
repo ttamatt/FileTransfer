@@ -14,16 +14,6 @@ public class Main {
             case "1":
                 Receive receive = new Receive();
                 receive.start();
-//                for (;;) {
-//                    if (receive.started) {
-//                        System.out.println("Input 'quit' to exit");
-//                        if ("quit".equals(scanner.nextLine())) {
-//                            return;
-//                        }
-//                    }else {
-//                        Thread.yield();
-//                    }
-//                }
                 receive.join();
             case "2":
                 send.handleSend();

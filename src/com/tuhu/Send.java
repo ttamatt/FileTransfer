@@ -3,13 +3,12 @@ package com.tuhu;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.Scanner;
 
 class Send {
@@ -28,9 +27,6 @@ class Send {
     }
 
     void sendFile(String fileLocation) {
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(Config.sendIp, Config.port);
-        Long startPosition = getStartPositionFromServer(inetSocketAddress, fileLocation);
-        System.out.println("Sending file......");
         RandomAccessFile randomAccessFile;
         try {
             randomAccessFile = new RandomAccessFile(fileLocation, "r");
@@ -40,8 +36,11 @@ class Send {
         }
         FileChannel fileChannel = randomAccessFile.getChannel();
         SocketChannel socketChannel;
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(Config.sendIp, Config.TRANSFER_PORT);
         try {
-            if(startPosition.equals(fileChannel.size())){
+            Long startPosition = beforeSend(fileLocation,fileChannel.size());
+            System.out.println("Sending file......");
+            if (startPosition.equals(fileChannel.size())) {
                 System.out.println("This file has been sent before, resending the file.....");
                 startPosition = 0L;
             }
@@ -55,22 +54,21 @@ class Send {
         }
     }
 
-    private Long getStartPositionFromServer(InetSocketAddress inetSocketAddress, String fileLocation) {
+    private Long beforeSend(String fileLocation,Long fileSize) {
         try {
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(Config.sendIp, Config.MSG_PORT);
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             md5.update(Files.readAllBytes(Paths.get(fileLocation)));
             byte[] fileMd5Digest = md5.digest();
+            String fileMd5 = Base64.getEncoder().encodeToString(fileMd5Digest);
+            ClientInfo clientInfo = new ClientInfo();
+            clientInfo.setFileMd5(fileMd5);
+            clientInfo.setFileSize(fileSize);
             SocketChannel socketChannel = SocketChannel.open();
             socketChannel.connect(inetSocketAddress);
-            socketChannel.write(ByteBuffer.wrap(fileMd5Digest));
-            ByteBuffer indexBuffer = ByteBuffer.allocate(1024);
-            socketChannel.read(indexBuffer);
-            byte[] indexBytes = new byte[indexBuffer.position()];
-            indexBuffer.rewind();
-            indexBuffer.get(indexBytes);
-            socketChannel.close();
-            Thread.sleep(1000);
-            return Long.parseLong(new String(indexBytes, StandardCharsets.UTF_8));
+            HandleInfo.sendSerial(socketChannel, clientInfo);
+            ServerInfo serverInfo = (ServerInfo) HandleInfo.recvSerial(socketChannel);
+            return serverInfo.getAcceptedLocation();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -43,7 +43,7 @@ public class FileRecord {
     }
 
     private Map<String, String> stringToMap(String value) {
-        value = value.substring(1, value.length() - 2);
+        value = value.substring(1, value.lastIndexOf("}"));
         if(value.equals("")){
             return new HashMap<>();
         }

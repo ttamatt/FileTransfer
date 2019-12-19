@@ -3,30 +3,23 @@ package com.tuhu;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Base64;
 import java.util.Map;
 
 public class Receive extends Thread {
 
-    boolean started = false;
-
-    private String fileMd5;
-
-    private Long startPosition;
+    private ClientInfo clientInfo;
 
     @Override
     public void run() {
         try {
-            fileMd5 = getFileMd5FromClient();
-            startPosition = getStartPosition(fileMd5);
+            clientInfo = getClientInfo();
+            Long startPosition = getStartPosition(clientInfo.getFileMd5());
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.socket().bind(new InetSocketAddress(Config.port));
-            System.out.println("Server listening at:" + Config.port);
-            started = true;
+            serverSocketChannel.socket().bind(new InetSocketAddress(Config.TRANSFER_PORT));
+            System.out.println("Server listening at:" + Config.TRANSFER_PORT);
             serverSocketChannel.configureBlocking(false);
             handleReceive(serverSocketChannel, startPosition);
         } catch (Exception e) {
@@ -44,8 +37,8 @@ public class Receive extends Thread {
                     RandomAccessFile randomAccessFile = new RandomAccessFile(Config.outPutLocation, "rw");
                     FileChannel fileChannel = randomAccessFile.getChannel();
                     Long receiveIndex = fileChannel.transferFrom(socketChannel, startPosition, 2147483648L);
-                    System.out.println("Receive startPosition:" + String.valueOf(receiveIndex));
-                    fileRecord.recordFile(fileMd5, String.valueOf(receiveIndex));
+                    System.out.println("Receive startPosition:" + receiveIndex);
+                    fileRecord.recordFile(clientInfo.getFileMd5(), String.valueOf(receiveIndex));
                     fileChannel.close();
                     serverSocketChannel.close();
                     System.out.println("File received");
@@ -65,37 +58,37 @@ public class Receive extends Thread {
             return 0L;
         } else {
             Long startPosition = Long.parseLong(fileMap.get(fileMd5));
+            if(startPosition.equals(clientInfo.getFileSize())){
+                System.out.println("This file has been sent before, resending the file.....");
+                return 0L;
+            }
             System.out.println("Transferring resume at:" + startPosition);
             return startPosition;
         }
     }
 
-    private String getFileMd5FromClient() {
+    private ClientInfo getClientInfo() {
         try {
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.socket().bind(new InetSocketAddress(Config.port));
-            ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+            serverSocketChannel.socket().bind(new InetSocketAddress(Config.MSG_PORT));
             System.out.println("Waiting for file MD5......");
             SocketChannel socketChannel = serverSocketChannel.accept();
-            socketChannel.read(byteBuffer);
+            ClientInfo clientInfo = (ClientInfo) HandleInfo.recvSerial(socketChannel);
+            System.out.println("File MD5 checksum:" + clientInfo.getFileMd5());
+            //prepare serverInfo
+            ServerInfo serverInfo = new ServerInfo();
             FileRecord fileRecord = new FileRecord();
             Map<String, String> map = fileRecord.getFileRecord();
-            byte[] md5Bytes = new byte[byteBuffer.position()];
-            byteBuffer.rewind();
-            byteBuffer.get(md5Bytes);
-            String fileMd5 = Base64.getEncoder().encodeToString(md5Bytes);
-            ByteBuffer startPositionBuffer;
-            if (map.get(fileMd5) != null) {
-                startPositionBuffer = ByteBuffer.wrap(map.get(fileMd5).getBytes());
+            if (map.get(clientInfo.getFileMd5()) != null) {
+                serverInfo.setAcceptedLocation(Long.parseLong(map.get(clientInfo.getFileMd5())));
             } else {
-                startPositionBuffer = ByteBuffer.wrap("0".getBytes());
+                serverInfo.setAcceptedLocation(0L);
             }
-            socketChannel.write(startPositionBuffer);
+            HandleInfo.sendSerial(socketChannel, serverInfo);
             socketChannel.close();
             serverSocketChannel.close();
-            System.out.println("File MD5 checksum:" + fileMd5);
-            return fileMd5;
-        } catch (IOException e) {
+            return clientInfo;
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
