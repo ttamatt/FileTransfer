@@ -63,6 +63,7 @@ class Send {
             String fileMd5 = Base64.getEncoder().encodeToString(fileMd5Digest);
             ClientInfo clientInfo = new ClientInfo();
             clientInfo.setFileMd5(fileMd5);
+            clientInfo.setFileName(Paths.get(fileLocation).getFileName().toString());
             clientInfo.setFileSize(fileSize);
             SocketChannel socketChannel = SocketChannel.open();
             socketChannel.connect(inetSocketAddress);

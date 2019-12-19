@@ -7,6 +7,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Receive extends Thread {
 
@@ -15,26 +16,29 @@ public class Receive extends Thread {
     @Override
     public void run() {
         try {
+            System.out.println("Input output file path:");
+            Scanner scanner = new Scanner(System.in);
+            String outputPath = scanner.nextLine();
             clientInfo = getClientInfo();
             Long startPosition = getStartPosition(clientInfo.getFileMd5());
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.socket().bind(new InetSocketAddress(Config.TRANSFER_PORT));
             System.out.println("Server listening at:" + Config.TRANSFER_PORT);
             serverSocketChannel.configureBlocking(false);
-            handleReceive(serverSocketChannel, startPosition);
+            handleReceive(serverSocketChannel, startPosition, outputPath);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void handleReceive(ServerSocketChannel serverSocketChannel, Long startPosition) {
+    private void handleReceive(ServerSocketChannel serverSocketChannel, Long startPosition, String outputPath) {
         try {
             FileRecord fileRecord = new FileRecord();
             for (; ; ) {
                 SocketChannel socketChannel = serverSocketChannel.accept();
                 if (socketChannel != null) {
                     System.out.println("File receiving......");
-                    RandomAccessFile randomAccessFile = new RandomAccessFile(Config.outPutLocation, "rw");
+                    RandomAccessFile randomAccessFile = new RandomAccessFile(outputPath + '/' + clientInfo.getFileName(), "rw");
                     FileChannel fileChannel = randomAccessFile.getChannel();
                     Long receiveIndex = fileChannel.transferFrom(socketChannel, startPosition, 2147483648L);
                     System.out.println("Receive startPosition:" + receiveIndex);
@@ -58,7 +62,7 @@ public class Receive extends Thread {
             return 0L;
         } else {
             Long startPosition = Long.parseLong(fileMap.get(fileMd5));
-            if(startPosition.equals(clientInfo.getFileSize())){
+            if (startPosition.equals(clientInfo.getFileSize())) {
                 System.out.println("This file has been sent before, resending the file.....");
                 return 0L;
             }
