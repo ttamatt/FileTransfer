@@ -11,19 +11,31 @@ import java.util.Map;
 
 public class FileRecord {
 
-    public void recordFile(String md5, String index) throws IOException {
+    public void addRecord(String md5, String index) throws IOException {
         FileChannel fileChannel;
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile("./FileRecordText", "rw");
             fileChannel = randomAccessFile.getChannel();
             Map<String, String> map = getFileRecord();
-            map.put(md5, index);
+            if (md5 != null) {
+                map.put(md5, index);
+            }
             randomAccessFile.setLength(0);
             ByteBuffer byteBuffer = ByteBuffer.wrap(map.toString().getBytes());
             fileChannel.write(byteBuffer);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            return;
+        }
+    }
+
+    public void recordMap(Map<String,String> map) throws IOException {
+        try {
+            RandomAccessFile randomAccessFile = new RandomAccessFile("./FileRecordText", "rw");
+            randomAccessFile.setLength(0);
+            ByteBuffer byteBuffer = ByteBuffer.wrap(map.toString().getBytes());
+            randomAccessFile.getChannel().write(byteBuffer);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
@@ -43,10 +55,10 @@ public class FileRecord {
     }
 
     private Map<String, String> stringToMap(String value) {
-        value = value.substring(1, value.lastIndexOf("}"));
-        if(value.equals("")){
+        if (value.equals("")) {
             return new HashMap<>();
         }
+        value = value.substring(1, value.lastIndexOf("}"));
         String[] keyValuePairs = value.split(",", 2);
         Map<String, String> map = new HashMap<>();
         for (String pair : keyValuePairs) {

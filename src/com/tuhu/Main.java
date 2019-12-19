@@ -15,6 +15,7 @@ public class Main {
                 Receive receive = new Receive();
                 receive.start();
                 receive.join();
+                break;
             case "2":
                 send.handleSend();
         }

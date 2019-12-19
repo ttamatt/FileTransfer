@@ -12,21 +12,22 @@ import java.util.Base64;
 import java.util.Scanner;
 
 class Send {
-
     void handleSend() {
         for (; ; ) {
-            System.out.println("Input file path('quit' to exit):");
             Scanner scanner = new Scanner(System.in);
+            System.out.println("Input targetIp:");
+            String targetIp = scanner.nextLine();
+            System.out.println("Input file path('quit' to exit):");
             String filePath = scanner.nextLine();
             if ("quit".equals(filePath)) {
                 return;
             } else {
-                new Send().sendFile(filePath);
+                new Send().sendFile(filePath, targetIp);
             }
         }
     }
 
-    void sendFile(String fileLocation) {
+    void sendFile(String fileLocation, String targetIp) {
         RandomAccessFile randomAccessFile;
         try {
             randomAccessFile = new RandomAccessFile(fileLocation, "r");
@@ -36,9 +37,9 @@ class Send {
         }
         FileChannel fileChannel = randomAccessFile.getChannel();
         SocketChannel socketChannel;
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(Config.sendIp, Config.TRANSFER_PORT);
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.TRANSFER_PORT);
         try {
-            Long startPosition = beforeSend(fileLocation,fileChannel.size());
+            Long startPosition = beforeSend(targetIp, fileLocation, fileChannel.size());
             System.out.println("Sending file......");
             if (startPosition.equals(fileChannel.size())) {
                 System.out.println("This file has been sent before, resending the file.....");
@@ -54,9 +55,9 @@ class Send {
         }
     }
 
-    private Long beforeSend(String fileLocation,Long fileSize) {
+    private Long beforeSend(String targetIp, String fileLocation, Long fileSize) {
         try {
-            InetSocketAddress inetSocketAddress = new InetSocketAddress(Config.sendIp, Config.MSG_PORT);
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.MSG_PORT);
             MessageDigest md5 = MessageDigest.getInstance("MD5");
             md5.update(Files.readAllBytes(Paths.get(fileLocation)));
             byte[] fileMd5Digest = md5.digest();
