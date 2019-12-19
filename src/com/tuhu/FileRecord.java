@@ -28,7 +28,7 @@ public class FileRecord {
         }
     }
 
-    public void recordMap(Map<String,String> map) throws IOException {
+    public void recordMap(Map<String, String> map) throws IOException {
         try {
             RandomAccessFile randomAccessFile = new RandomAccessFile("./FileRecordText", "rw");
             randomAccessFile.setLength(0);
@@ -58,15 +58,19 @@ public class FileRecord {
         if (value.equals("")) {
             return new HashMap<>();
         }
-        value = value.substring(1, value.lastIndexOf("}"));
-        String[] keyValuePairs = value.split(",", 2);
-        Map<String, String> map = new HashMap<>();
-        for (String pair : keyValuePairs) {
-            String key = pair.substring(0, pair.lastIndexOf("="));
-            String index = pair.substring(pair.lastIndexOf("=") + 1);
-            map.put(key, index);
+        try {
+            value = value.substring(1, value.lastIndexOf("}"));
+            String[] keyValuePairs = value.split(",", 2);
+            Map<String, String> map = new HashMap<>();
+            for (String pair : keyValuePairs) {
+                String key = pair.substring(0, pair.lastIndexOf("="));
+                String index = pair.substring(pair.lastIndexOf("=") + 1);
+                map.put(key, index);
+            }
+            return map;
+        }catch (Exception e){
+            return new HashMap<>();
         }
-        return map;
     }
 
 }
