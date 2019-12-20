@@ -1,7 +1,5 @@
 package com.tuhu;
 
-import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
-
 import java.io.IOException;
 import java.util.Scanner;
 
@@ -17,7 +15,14 @@ public class Main {
                 receive.join();
                 break;
             case "2":
-                send.handleSend();
+                for (; ; ) {
+                    System.out.println("Input targetIp:");
+                    String targetIp = scanner.nextLine();
+                    System.out.println("Input file path('quit' to exit):");
+                    String filePath = scanner.nextLine();
+                    send.handleSend(filePath, targetIp);
+                }
+
         }
     }
 

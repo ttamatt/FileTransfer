@@ -4,11 +4,21 @@ import java.io.Serializable;
 
 public class ClientInfo implements Serializable {
 
+    private Long startPosition;
+
     private Long fileSize;
 
     private String fileName;
 
     private String fileMd5;
+
+    public Long getStartPosition() {
+        return startPosition;
+    }
+
+    public void setStartPosition(Long startPosition) {
+        this.startPosition = startPosition;
+    }
 
     public Long getFileSize() {
         return fileSize;

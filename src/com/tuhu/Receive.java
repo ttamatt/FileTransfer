@@ -20,45 +20,72 @@ public class Receive extends Thread {
             Scanner scanner = new Scanner(System.in);
             String outputPath = scanner.nextLine();
             System.out.println("Server listening at:" + Config.TRANSFER_PORT);
-            clientInfo = getClientInfo();
-            Long startPosition = getStartPosition(clientInfo.getFileMd5());
+//            clientInfo = getClientInfo();
+//            Long startPosition = getStartPosition(clientInfo.getFileMd5());
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.socket().bind(new InetSocketAddress(Config.TRANSFER_PORT));
             serverSocketChannel.configureBlocking(false);
-            handleReceive(serverSocketChannel, startPosition, outputPath);
+//            handleReceive(serverSocketChannel, startPosition, outputPath);
+            handleReceive(serverSocketChannel, outputPath);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void handleReceive(ServerSocketChannel serverSocketChannel, Long startPosition, String outputPath) {
-        try {
-            FileRecord fileRecord = new FileRecord();
-            for (; ; ) {
-                SocketChannel socketChannel = serverSocketChannel.accept();
-                if (socketChannel != null) {
-                    System.out.println("File receiving......");
-                    RandomAccessFile randomAccessFile = new RandomAccessFile(outputPath + '/' + clientInfo.getFileName(), "rw");
-                    FileChannel fileChannel = randomAccessFile.getChannel();
-                    Long receiveIndex = fileChannel.transferFrom(socketChannel, startPosition, 2147483648L);
-                    //delete completed file
-                    if (clientInfo.getFileSize().equals(receiveIndex)) {
-                        Map<String, String> fileMap = fileRecord.getFileRecord();
-                        fileMap.remove(clientInfo.getFileMd5());
-                        fileRecord.recordMap(fileMap);
-                    }else{
-                        fileRecord.addRecord(clientInfo.getFileMd5(), String.valueOf(receiveIndex));
-                    }
-                    fileChannel.close();
-                    serverSocketChannel.close();
-                    System.out.println("File received");
-                    return;
-                }
+
+    private void handleReceive(ServerSocketChannel serverSocketChannel, String output) throws IOException, ClassNotFoundException {
+        while (true) {
+
+            SocketChannel socketChannel = serverSocketChannel.accept();
+
+            if (socketChannel != null) {
+                ClientInfo clientInfo = (ClientInfo) HandleInfo.recvSerial(socketChannel);
+                ServerInfo serverInfo = new ServerInfo();
+                serverInfo.setAcceptedLocation(1000000L);
+                HandleInfo.sendSerial(socketChannel, serverInfo);
+                RandomAccessFile randomAccessFile = new RandomAccessFile(output + '/' + clientInfo.getFileName(), "rw");
+                randomAccessFile.setLength(clientInfo.getFileSize());
+                FileChannel fileChannel = randomAccessFile.getChannel();
+                System.out.println(clientInfo.getStartPosition());
+                Long receIndex = fileChannel.transferFrom(socketChannel, clientInfo.getStartPosition(), 2147483648L);
+                socketChannel.close();
+                System.out.println(receIndex);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+
+//                    key.interestOps(SelectionKey.OP_WRITE);
+
+
         }
     }
+//    private void handleReceive(ServerSocketChannel serverSocketChannel, Long startPosition, String outputPath) {
+//        try {
+//            FileRecord fileRecord = new FileRecord();
+//            for (; ; ) {
+//                SocketChannel socketChannel = serverSocketChannel.accept();
+//                if (socketChannel != null) {
+//                    System.out.println("File receiving......");
+//                    RandomAccessFile randomAccessFile = new RandomAccessFile(outputPath + '/' + clientInfo.getFileName(), "rw");
+//                    FileChannel fileChannel = randomAccessFile.getChannel();
+//                    Long receiveIndex = fileChannel.transferFrom(socketChannel, startPosition, 2147483648L);
+//                    //delete completed file
+//                    if (clientInfo.getFileSize().equals(receiveIndex)) {
+//                        Map<String, String> fileMap = fileRecord.getFileRecord();
+//                        fileMap.remove(clientInfo.getFileMd5());
+//                        fileRecord.recordMap(fileMap);
+//                    }else{
+//                        fileRecord.addRecord(clientInfo.getFileMd5(), String.valueOf(receiveIndex));
+//                    }
+//                    fileChannel.close();
+//                    serverSocketChannel.close();
+//                    System.out.println("File received");
+//                    return;
+//                }
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//
+//        }
+//    }
 
     private Long getStartPosition(String fileMd5) {
         FileRecord fileRecord = new FileRecord();
