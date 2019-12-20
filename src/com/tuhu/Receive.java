@@ -8,6 +8,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Receive extends Thread {
 
@@ -37,24 +39,35 @@ public class Receive extends Thread {
         while (true) {
 
             SocketChannel socketChannel = serverSocketChannel.accept();
-
+            ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
             if (socketChannel != null) {
-                ClientInfo clientInfo = (ClientInfo) HandleInfo.recvSerial(socketChannel);
-                ServerInfo serverInfo = new ServerInfo();
-                serverInfo.setAcceptedLocation(1000000L);
-                HandleInfo.sendSerial(socketChannel, serverInfo);
-                RandomAccessFile randomAccessFile = new RandomAccessFile(output + '/' + clientInfo.getFileName(), "rw");
-                randomAccessFile.setLength(clientInfo.getFileSize());
-                FileChannel fileChannel = randomAccessFile.getChannel();
-                System.out.println(clientInfo.getStartPosition());
-                Long receIndex = fileChannel.transferFrom(socketChannel, clientInfo.getStartPosition(), 2147483648L);
-                socketChannel.close();
-                System.out.println(receIndex);
+                executorService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try{
+                            ClientInfo clientInfo = (ClientInfo) HandleInfo.recvSerial(socketChannel);
+                            ServerInfo serverInfo = new ServerInfo();
+                            serverInfo.setAcceptedLocation(1000000L);
+                            HandleInfo.sendSerial(socketChannel, serverInfo);
+                            RandomAccessFile randomAccessFile = new RandomAccessFile(output + '/' + clientInfo.getFileName(), "rw");
+                            randomAccessFile.setLength(clientInfo.getFileSize());
+                            FileChannel fileChannel = randomAccessFile.getChannel();
+                            System.out.println(clientInfo.getStartPosition());
+                            Long receIndex = fileChannel.transferFrom(socketChannel, clientInfo.getStartPosition(), 2147483648L);
+                            if(clientInfo.getFileSize().equals(clientInfo.getStartPosition() + receIndex)){
+                                System.out.println("END!!!!!!!!!!!!!!!!!");
+                            }
+                            socketChannel.close();
+                            fileChannel.close();
+                            System.out.println(receIndex);
+                        } catch (Exception e){
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
             }
-
 //                    key.interestOps(SelectionKey.OP_WRITE);
-
-
         }
     }
 //    private void handleReceive(ServerSocketChannel serverSocketChannel, Long startPosition, String outputPath) {
