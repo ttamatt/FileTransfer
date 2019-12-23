@@ -1,6 +1,9 @@
 package com.tuhu;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -20,7 +23,11 @@ public class Main {
                     String targetIp = scanner.nextLine();
                     System.out.println("Input file path('quit' to exit):");
                     String filePath = scanner.nextLine();
-                    send.handleSend(filePath, targetIp);
+                    try {
+                        send.handleSend(filePath, targetIp);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
         }

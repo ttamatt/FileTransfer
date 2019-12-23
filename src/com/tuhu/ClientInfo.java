@@ -6,11 +6,16 @@ public class ClientInfo implements Serializable {
 
     private Long startPosition;
 
-    private Long fileSize;
+    public Long getEndPosition() {
+        return endPosition;
+    }
 
-    private String fileName;
+    public void setEndPosition(Long endPosition) {
+        this.endPosition = endPosition;
+    }
 
-    private String fileMd5;
+    private Long endPosition;
+
 
     public Long getStartPosition() {
         return startPosition;
@@ -20,27 +25,4 @@ public class ClientInfo implements Serializable {
         this.startPosition = startPosition;
     }
 
-    public Long getFileSize() {
-        return fileSize;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public String getFileMd5() {
-        return fileMd5;
-    }
-
-    public void setFileSize(Long fileSize) {
-        this.fileSize = fileSize;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
-    public void setFileMd5(String fileMd5) {
-        this.fileMd5 = fileMd5;
-    }
 }

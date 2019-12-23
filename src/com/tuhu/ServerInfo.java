@@ -1,15 +1,16 @@
 package com.tuhu;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class ServerInfo implements Serializable {
-    private Long acceptedLocation;
+    private List<RecordInfo.Block> startBlockList;
 
-    public void setAcceptedLocation(Long acceptedLocation) {
-        this.acceptedLocation = acceptedLocation;
+    public List<RecordInfo.Block> getStartBlockList() {
+        return startBlockList;
     }
 
-    public Long getAcceptedLocation() {
-        return acceptedLocation;
+    public void setStartBlockList(List<RecordInfo.Block> startBlockList) {
+        this.startBlockList = startBlockList;
     }
 }
