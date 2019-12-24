@@ -55,6 +55,7 @@ public class Receive extends Thread {
 
     private void handleReceive(ExecutorService executorService, ServerSocketChannel serverSocketChannel, String output, FileInfo fileInfo) throws Exception {
         Long start = System.currentTimeMillis();
+        System.out.println("Receiving......");
         while (serverSocketChannel.isOpen()) {
             Long now = System.currentTimeMillis();
             if (now - start > 5000) {
@@ -70,7 +71,6 @@ public class Receive extends Thread {
                         randomAccessFile.setLength(fileInfo.getFileSize());
                         FileChannel fileChannel = randomAccessFile.getChannel();
                         Long receiveIndex = 0L;
-                        System.out.println("Receiving......");
                         while (receiveIndex < clientInfo.getEndPosition() - clientInfo.getStartPosition()) {
                             receiveIndex += fileChannel.transferFrom(socketChannel, clientInfo.getStartPosition(), 2147483648L);
                         }
