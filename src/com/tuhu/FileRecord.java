@@ -5,16 +5,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FileRecord {
 
     static Map<String, List<RecordInfo.Block>> recordMap;
 
-    static void setRecordMap(Serializable object) throws IOException {
+    static void setRecordMap(RecordInfo recordInfo,String md5) throws IOException {
         try {
             File file = new File("./FileRecordText");
+
+            if(!file.exists()) {
+                file.createNewFile();
+            }
+            FileWriter fileWriter =new FileWriter(file);
+            fileWriter.write("");
+            fileWriter.flush();
+            fileWriter.close();
+
+            List<RecordInfo.Block> blockList = recordInfo.getBreakPointMap().get(md5).stream().filter(i->!i.getStartPosition().equals(i.getEndPosition())).collect(Collectors.toList());
+            recordInfo.getBreakPointMap().remove(md5);
+            recordInfo.getBreakPointMap().put(md5,blockList);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(file));
-            objectOutputStream.writeObject(object);
+            objectOutputStream.writeObject(recordInfo);
             objectOutputStream.flush();
             objectOutputStream.close();
         } catch (FileNotFoundException e) {

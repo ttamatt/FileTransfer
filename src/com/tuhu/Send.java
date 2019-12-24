@@ -11,6 +11,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 class Send {
     void handleSend(String filePath, String targetIp) throws Exception {
@@ -19,11 +20,11 @@ class Send {
         } else {
             RandomAccessFile randomAccessFile = new RandomAccessFile(filePath, "r");
             Long fileSize = randomAccessFile.getChannel().size();
-            int threadNum = Runtime.getRuntime().availableProcessors() * 2;
+            int threadNum = Runtime.getRuntime().availableProcessors();
             ExecutorService executor = Executors.newFixedThreadPool(threadNum);
             ServerInfo serverInfo = getFileRecord(filePath, targetIp, fileSize);
             List<RecordInfo.Block> blockList = serverInfo.getStartBlockList();
-            if (blockList != null) {
+            if (blockList != null && !blockList.isEmpty()) {
                 System.out.println("File had a record");
                 for (RecordInfo.Block block : blockList) {
                     Long start = block.getStartPosition();
@@ -40,6 +41,9 @@ class Send {
                 }
                 executor.submit(() -> sendFile(filePath, targetIp, (threadNum - 1) * blockSize, fileSize));
             }
+            executor.shutdown();
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+            System.out.println("transferring finished");
         }
 
     }
@@ -51,7 +55,7 @@ class Send {
             InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.TRANSFER_PORT);
             SocketChannel socketChannel = SocketChannel.open();
             socketChannel.connect(inetSocketAddress);
-            sendClientInfo(socketChannel, startLocation,endLocation);
+            sendClientInfo(socketChannel, startLocation, endLocation);
             fileChannel.transferTo(startLocation, endLocation - startLocation, socketChannel);
             socketChannel.close();
         } catch (Exception e) {
@@ -59,7 +63,7 @@ class Send {
         }
     }
 
-    private void sendClientInfo(SocketChannel socketChannel, Long startPosition,Long endPosition) {
+    private void sendClientInfo(SocketChannel socketChannel, Long startPosition, Long endPosition) {
         try {
             ClientInfo clientInfo = new ClientInfo();
             clientInfo.setStartPosition(startPosition);
