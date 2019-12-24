@@ -1,8 +1,8 @@
-package com.tuhu;
+package com.tuhu.info;
 
 import java.io.Serializable;
 
-public class ClientInfo implements Serializable {
+public class FileInfo implements Serializable {
 
     private Long fileSize;
 
@@ -14,20 +14,20 @@ public class ClientInfo implements Serializable {
         return fileSize;
     }
 
-    public String getFileName() {
-        return fileName;
-    }
-
-    public String getFileMd5() {
-        return fileMd5;
-    }
-
     public void setFileSize(Long fileSize) {
         this.fileSize = fileSize;
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getFileMd5() {
+        return fileMd5;
     }
 
     public void setFileMd5(String fileMd5) {

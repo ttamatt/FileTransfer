@@ -1,6 +1,12 @@
 package com.tuhu;
 
-import java.io.FileNotFoundException;
+import com.tuhu.info.ClientInfo;
+import com.tuhu.info.FileInfo;
+import com.tuhu.info.RecordInfo;
+import com.tuhu.info.ServerInfo;
+import com.tuhu.tool.HandleSerialTool;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.nio.channels.FileChannel;
@@ -9,71 +15,92 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.Base64;
-import java.util.Scanner;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 class Send {
-    void handleSend() {
-        for (; ; ) {
-            Scanner scanner = new Scanner(System.in);
-            System.out.println("Input targetIp:");
-            String targetIp = scanner.nextLine();
-            System.out.println("Input file path('quit' to exit):");
-            String filePath = scanner.nextLine();
-            if ("quit".equals(filePath)) {
-                return;
+    void handleSend(String filePath, String targetIp) throws Exception {
+        if ("quit".equals(filePath)) {
+            System.exit(0);
+        } else {
+            RandomAccessFile randomAccessFile = new RandomAccessFile(filePath, "r");
+            Long fileSize = randomAccessFile.getChannel().size();
+            ServerInfo serverInfo = getFileRecord(filePath, targetIp, fileSize);
+            List<RecordInfo.Block> blockList = serverInfo.getStartBlockList();
+            //prepare thread pool
+            int threadNum = Runtime.getRuntime().availableProcessors();
+            ExecutorService executor = Executors.newFixedThreadPool(threadNum);
+            //file resume from record
+            if (blockList != null && !blockList.isEmpty()) {
+                System.out.println("File transferred from breakpoint....");
+                for (RecordInfo.Block block : blockList) {
+                    Long start = block.getStartPosition();
+                    Long end = block.getEndPosition();
+                    executor.submit(() -> sendFile(filePath, targetIp, start, end));
+                }
             } else {
-                new Send().sendFile(filePath, targetIp);
+                //start a new file
+                Long blockSize = fileSize / threadNum;
+                for (long i = 0L; i < threadNum - 1; i++) {
+                    Long index = i;
+                    executor.submit(
+                            () -> sendFile(filePath, targetIp, index * blockSize, (index + 1) * blockSize)
+                    );
+                }
+                executor.submit(() -> sendFile(filePath, targetIp, (threadNum - 1) * blockSize, fileSize));
             }
+            executor.shutdown();
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+            System.out.println("transferring finished");
         }
+
     }
 
-    void sendFile(String fileLocation, String targetIp) {
-        RandomAccessFile randomAccessFile;
+    void sendFile(String fileLocation, String targetIp, Long startLocation, Long endLocation) {
         try {
-            randomAccessFile = new RandomAccessFile(fileLocation, "r");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return;
-        }
-        FileChannel fileChannel = randomAccessFile.getChannel();
-        SocketChannel socketChannel;
-        InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.TRANSFER_PORT);
-        try {
-            Long startPosition = beforeSend(targetIp, fileLocation, fileChannel.size());
-            System.out.println("Sending file......");
-            if (startPosition.equals(fileChannel.size())) {
-                System.out.println("This file has been sent before, resending the file.....");
-                startPosition = 0L;
-            }
-            socketChannel = SocketChannel.open();
+            RandomAccessFile randomAccessFile = new RandomAccessFile(fileLocation, "r");
+            FileChannel fileChannel = randomAccessFile.getChannel();
+            InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.TRANSFER_PORT);
+            SocketChannel socketChannel = SocketChannel.open();
             socketChannel.connect(inetSocketAddress);
-            fileChannel.transferTo(startPosition, fileChannel.size(), socketChannel);
-            System.out.println("File has been sent");
+            sendClientInfo(socketChannel, startLocation, endLocation);
+            fileChannel.transferTo(startLocation, endLocation - startLocation, socketChannel);
             socketChannel.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private Long beforeSend(String targetIp, String fileLocation, Long fileSize) {
+    private void sendClientInfo(SocketChannel socketChannel, Long startPosition, Long endPosition) {
         try {
-            InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.MSG_PORT);
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            md5.update(Files.readAllBytes(Paths.get(fileLocation)));
-            byte[] fileMd5Digest = md5.digest();
-            String fileMd5 = Base64.getEncoder().encodeToString(fileMd5Digest);
             ClientInfo clientInfo = new ClientInfo();
-            clientInfo.setFileMd5(fileMd5);
-            clientInfo.setFileName(Paths.get(fileLocation).getFileName().toString());
-            clientInfo.setFileSize(fileSize);
-            SocketChannel socketChannel = SocketChannel.open();
-            socketChannel.connect(inetSocketAddress);
-            HandleInfo.sendSerial(socketChannel, clientInfo);
-            ServerInfo serverInfo = (ServerInfo) HandleInfo.recvSerial(socketChannel);
-            return serverInfo.getAcceptedLocation();
+            clientInfo.setStartPosition(startPosition);
+            clientInfo.setEndPosition(endPosition);
+            HandleSerialTool.sendSerial(socketChannel, clientInfo);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return 0L;
+    }
+
+    private ServerInfo getFileRecord(String fileLocation, String targetIp, Long fileSize) throws Exception {
+        //generate md5
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        System.out.println("Generating file MD5.....");
+        md5.update(Files.readAllBytes(Paths.get(fileLocation)));
+        byte[] fileMd5Digest = md5.digest();
+        String fileMd5 = Base64.getEncoder().encodeToString(fileMd5Digest);
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.FILE_INFO_PORT);
+        //send file info
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setFileMd5(fileMd5);
+        fileInfo.setFileName(Paths.get(fileLocation).getFileName().toString());
+        fileInfo.setFileSize(fileSize);
+        SocketChannel socketChannel = SocketChannel.open(inetSocketAddress);
+        HandleSerialTool.sendSerial(socketChannel, fileInfo);
+        ServerInfo serverInfo = (ServerInfo) HandleSerialTool.recvSerial(socketChannel);
+        socketChannel.close();
+        return serverInfo;
     }
 }

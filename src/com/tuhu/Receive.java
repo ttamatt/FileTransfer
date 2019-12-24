@@ -1,106 +1,104 @@
 package com.tuhu;
 
-import java.io.IOException;
+import com.tuhu.info.ClientInfo;
+import com.tuhu.info.FileInfo;
+import com.tuhu.info.RecordInfo;
+import com.tuhu.info.ServerInfo;
+import com.tuhu.tool.FileRecordTool;
+import com.tuhu.tool.HandleSerialTool;
+
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-public class Receive extends Thread {
+public class Receive{
 
-    private ClientInfo clientInfo;
-
-    @Override
-    public void run() {
+    public void run(String outputPath) {
         try {
-            System.out.println("Input output file path:");
-            Scanner scanner = new Scanner(System.in);
-            String outputPath = scanner.nextLine();
+            FileRecordTool.getRecordMap();
             System.out.println("Server listening at:" + Config.TRANSFER_PORT);
-            clientInfo = getClientInfo();
-            Long startPosition = getStartPosition(clientInfo.getFileMd5());
+            FileInfo fileInfo = getFileInfo();
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.socket().bind(new InetSocketAddress(Config.TRANSFER_PORT));
             serverSocketChannel.configureBlocking(false);
-            handleReceive(serverSocketChannel, startPosition, outputPath);
+            serverSocketChannel.socket().bind(new InetSocketAddress(Config.TRANSFER_PORT));
+            ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            Long startTime = System.currentTimeMillis();
+            handleReceive(executorService, serverSocketChannel, outputPath, fileInfo);
+            //wait for receive
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES);
+            RecordInfo recordInfo = new RecordInfo();
+            //record file blocks
+            recordInfo.setBreakPointMap(FileRecordTool.recordMap);
+            FileRecordTool.setRecordMap(recordInfo, fileInfo.getFileMd5());
+            Long endTime = System.currentTimeMillis();
+            //calculate transferring result message
+            double elapsedTime = (double) (endTime - startTime) / 1000;
+            System.out.println("Elapsed time:" + elapsedTime + "s");
+            System.out.println((fileInfo.getFileSize() / 1024 / 1024) / elapsedTime + "M/S");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void handleReceive(ServerSocketChannel serverSocketChannel, Long startPosition, String outputPath) {
-        try {
-            FileRecord fileRecord = new FileRecord();
-            for (; ; ) {
-                SocketChannel socketChannel = serverSocketChannel.accept();
-                if (socketChannel != null) {
-                    System.out.println("File receiving......");
-                    RandomAccessFile randomAccessFile = new RandomAccessFile(outputPath + '/' + clientInfo.getFileName(), "rw");
-                    FileChannel fileChannel = randomAccessFile.getChannel();
-                    Long receiveIndex = fileChannel.transferFrom(socketChannel, startPosition, 2147483648L);
-                    //delete completed file
-                    if (clientInfo.getFileSize().equals(receiveIndex)) {
-                        Map<String, String> fileMap = fileRecord.getFileRecord();
-                        fileMap.remove(clientInfo.getFileMd5());
-                        fileRecord.recordMap(fileMap);
-                    }else{
-                        fileRecord.addRecord(clientInfo.getFileMd5(), String.valueOf(receiveIndex));
-                    }
-                    fileChannel.close();
-                    serverSocketChannel.close();
-                    System.out.println("File received");
-                    return;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private FileInfo getFileInfo() throws Exception {
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        serverSocketChannel.socket().bind(new InetSocketAddress(Config.FILE_INFO_PORT));
+        SocketChannel socketChannel = serverSocketChannel.accept();
+        FileInfo fileInfo = (FileInfo) HandleSerialTool.recvSerial(socketChannel);
+        ServerInfo serverInfo = new ServerInfo();
+        serverInfo.setStartBlockList(FileRecordTool.getBlockList(fileInfo.getFileMd5()));
+        HandleSerialTool.sendSerial(socketChannel, serverInfo);
+        socketChannel.close();
+        serverSocketChannel.close();
+        return fileInfo;
     }
 
-    private Long getStartPosition(String fileMd5) {
-        FileRecord fileRecord = new FileRecord();
-        Map<String, String> fileMap = fileRecord.getFileRecord();
-        if (fileMap.get(fileMd5) == null) {
-            System.out.println("Start a new transferring");
-            return 0L;
-        } else {
-            Long startPosition = Long.parseLong(fileMap.get(fileMd5));
-            if (startPosition.equals(clientInfo.getFileSize())) {
-                System.out.println("This file has been sent before, resending the file.....");
-                return 0L;
+    private void handleReceive(ExecutorService executorService, ServerSocketChannel serverSocketChannel, String output, FileInfo fileInfo) throws Exception {
+        Long start = System.currentTimeMillis();
+        System.out.println("Receiving, please wait.......");
+        while (serverSocketChannel.isOpen()) {
+            Long now = System.currentTimeMillis();
+            //time out
+            if (now - start > Config.TIME_OUT) {
+                executorService.shutdown();
+                return;
             }
-//             System.out.println("Transferring resume at:" + startPosition);
-            System.out.println("File has been sent" + startPosition / clientInfo.getFileSize());
-            return startPosition;
-        }
-    }
-
-    private ClientInfo getClientInfo() {
-        try {
-            ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-            serverSocketChannel.socket().bind(new InetSocketAddress(Config.MSG_PORT));
             SocketChannel socketChannel = serverSocketChannel.accept();
-            ClientInfo clientInfo = (ClientInfo) HandleInfo.recvSerial(socketChannel);
-//            System.out.println("File MD5 checksum:" + clientInfo.getFileMd5());
-            //prepare serverInfo
-            ServerInfo serverInfo = new ServerInfo();
-            FileRecord fileRecord = new FileRecord();
-            Map<String, String> map = fileRecord.getFileRecord();
-            if (map.get(clientInfo.getFileMd5()) != null) {
-                serverInfo.setAcceptedLocation(Long.parseLong(map.get(clientInfo.getFileMd5())));
-            } else {
-                serverInfo.setAcceptedLocation(0L);
+            if (socketChannel != null) {
+                executorService.submit(() -> {
+                    try {
+                        //get client info
+                        ClientInfo clientInfo = (ClientInfo) HandleSerialTool.recvSerial(socketChannel);
+                        RandomAccessFile randomAccessFile = new RandomAccessFile(output + '/' + fileInfo.getFileName(), "rw");
+                        randomAccessFile.setLength(fileInfo.getFileSize());
+                        FileChannel fileChannel = randomAccessFile.getChannel();
+                        Long receiveIndex = 0L;
+                        //accept file stream
+                        while (receiveIndex < clientInfo.getEndPosition() - clientInfo.getStartPosition() && socketChannel.isOpen()) {
+                            receiveIndex += fileChannel.transferFrom(socketChannel, clientInfo.getStartPosition(), 2147483648L);
+                        }
+//                        System.out.println("start:" + clientInfo.getStartPosition() + "end:" + clientInfo.getEndPosition() + "%:" + receiveIndex / (clientInfo.getEndPosition() - clientInfo.getStartPosition()));
+                        RecordInfo.Block block = new RecordInfo.Block();
+                        block.setStartPosition(clientInfo.getStartPosition() + receiveIndex);
+                        block.setEndPosition(clientInfo.getEndPosition());
+                        FileRecordTool.addBlock(fileInfo.getFileMd5(), block);
+                        if (fileInfo.getFileSize().equals(clientInfo.getStartPosition() + receiveIndex)) {
+                            System.out.println("END!!!!!!!!!!!!!!!!!");
+                        }
+                        socketChannel.close();
+                        fileChannel.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+                start = System.currentTimeMillis();
             }
-            HandleInfo.sendSerial(socketChannel, serverInfo);
-            socketChannel.close();
-            serverSocketChannel.close();
-            return clientInfo;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
     }
 }
