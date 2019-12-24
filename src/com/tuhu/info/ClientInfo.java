@@ -1,4 +1,4 @@
-package com.tuhu;
+package com.tuhu.info;
 
 import java.io.Serializable;
 

@@ -1,4 +1,6 @@
-package com.tuhu;
+package com.tuhu.tool;
+
+import com.tuhu.info.RecordInfo;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -7,11 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class FileRecord {
+public class FileRecordTool {
 
-    static Map<String, List<RecordInfo.Block>> recordMap;
+    public static Map<String, List<RecordInfo.Block>> recordMap;
 
-    static void setRecordMap(RecordInfo recordInfo,String md5) throws IOException {
+    public static void setRecordMap(RecordInfo recordInfo,String md5) throws IOException {
         try {
             File file = new File("./FileRecordText");
 
@@ -35,7 +37,7 @@ public class FileRecord {
         }
     }
 
-    static void addBlock(String md5, RecordInfo.Block block) {
+    public static void addBlock(String md5, RecordInfo.Block block) {
         if (recordMap.get(md5) == null) {
             List<RecordInfo.Block> list = new ArrayList<>();
             list.add(block);
@@ -45,11 +47,11 @@ public class FileRecord {
         }
     }
 
-    static List<RecordInfo.Block> getBlockList(String md5) {
+    public static List<RecordInfo.Block> getBlockList(String md5) {
         return recordMap.get(md5);
     }
 
-    static void getRecordMap() {
+    public static void getRecordMap() {
         try {
             File file = new File("./FileRecordText");
             ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file));
@@ -57,8 +59,7 @@ public class FileRecord {
             objectInputStream.close();
             recordMap = recordInfo.getBreakPointMap();
         } catch (Exception e) {
-            FileRecord.recordMap = new HashMap<>();
-            return;
+            FileRecordTool.recordMap = new HashMap<>();
         }
     }
 }

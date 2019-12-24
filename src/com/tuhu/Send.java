@@ -1,5 +1,12 @@
 package com.tuhu;
 
+import com.tuhu.info.ClientInfo;
+import com.tuhu.info.FileInfo;
+import com.tuhu.info.RecordInfo;
+import com.tuhu.info.ServerInfo;
+import com.tuhu.tool.HandleSerialTool;
+import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.nio.channels.FileChannel;
@@ -20,18 +27,21 @@ class Send {
         } else {
             RandomAccessFile randomAccessFile = new RandomAccessFile(filePath, "r");
             Long fileSize = randomAccessFile.getChannel().size();
-            int threadNum = Runtime.getRuntime().availableProcessors();
-            ExecutorService executor = Executors.newFixedThreadPool(threadNum);
             ServerInfo serverInfo = getFileRecord(filePath, targetIp, fileSize);
             List<RecordInfo.Block> blockList = serverInfo.getStartBlockList();
+            //prepare thread pool
+            int threadNum = Runtime.getRuntime().availableProcessors();
+            ExecutorService executor = Executors.newFixedThreadPool(threadNum);
+            //file resume from record
             if (blockList != null && !blockList.isEmpty()) {
-                System.out.println("File had a record");
+                System.out.println("File transferred from breakpoint....");
                 for (RecordInfo.Block block : blockList) {
                     Long start = block.getStartPosition();
                     Long end = block.getEndPosition();
                     executor.submit(() -> sendFile(filePath, targetIp, start, end));
                 }
             } else {
+                //start a new file
                 Long blockSize = fileSize / threadNum;
                 for (long i = 0L; i < threadNum - 1; i++) {
                     Long index = i;
@@ -68,25 +78,28 @@ class Send {
             ClientInfo clientInfo = new ClientInfo();
             clientInfo.setStartPosition(startPosition);
             clientInfo.setEndPosition(endPosition);
-            HandleInfo.sendSerial(socketChannel, clientInfo);
+            HandleSerialTool.sendSerial(socketChannel, clientInfo);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private ServerInfo getFileRecord(String fileLocation, String targetIp, Long fileSize) throws Exception {
+        //generate md5
         MessageDigest md5 = MessageDigest.getInstance("MD5");
+        System.out.println("Generating file MD5.....");
         md5.update(Files.readAllBytes(Paths.get(fileLocation)));
         byte[] fileMd5Digest = md5.digest();
         String fileMd5 = Base64.getEncoder().encodeToString(fileMd5Digest);
         InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.FILE_INFO_PORT);
+        //send file info
         FileInfo fileInfo = new FileInfo();
         fileInfo.setFileMd5(fileMd5);
         fileInfo.setFileName(Paths.get(fileLocation).getFileName().toString());
         fileInfo.setFileSize(fileSize);
         SocketChannel socketChannel = SocketChannel.open(inetSocketAddress);
-        HandleInfo.sendSerial(socketChannel, fileInfo);
-        ServerInfo serverInfo = (ServerInfo) HandleInfo.recvSerial(socketChannel);
+        HandleSerialTool.sendSerial(socketChannel, fileInfo);
+        ServerInfo serverInfo = (ServerInfo) HandleSerialTool.recvSerial(socketChannel);
         socketChannel.close();
         return serverInfo;
     }
