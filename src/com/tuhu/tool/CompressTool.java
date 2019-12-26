@@ -17,7 +17,7 @@ public class CompressTool {
             FileInputStream fis = new FileInputStream(fileToZip);
             ZipEntry zipEntry = new ZipEntry(fileToZip.getName());
             zipOut.putNextEntry(zipEntry);
-            byte[] bytes = new byte[1024];
+            byte[] bytes = new byte[1024*1024];
             int length;
             while ((length = fis.read(bytes)) >= 0) {
                 zipOut.write(bytes, 0, length);
@@ -33,7 +33,7 @@ public class CompressTool {
     public static void zipExtractFile(String zipPath, String outFilepath) {
         try {
             File destDir = new File(outFilepath);
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[1024*1024];
             ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath));
             ZipEntry zipEntry = zis.getNextEntry();
             while (zipEntry != null) {
