@@ -6,13 +6,17 @@ import com.tuhu.info.RecordInfo;
 import com.tuhu.info.ServerInfo;
 import com.tuhu.tool.HandleSerialTool;
 import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
+import sun.security.provider.MD5;
 
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.List;
@@ -88,7 +92,9 @@ class Send {
         //generate md5
         MessageDigest md5 = MessageDigest.getInstance("MD5");
         System.out.println("Generating file MD5.....");
-        md5.update(Files.readAllBytes(Paths.get(fileLocation)));
+        RandomAccessFile randomAccessFile = new RandomAccessFile(fileLocation,"r");
+        MappedByteBuffer mappedByteBuffer = randomAccessFile.getChannel().map(FileChannel.MapMode.READ_ONLY,0,Integer.MAX_VALUE);
+        md5.update(mappedByteBuffer);
         byte[] fileMd5Digest = md5.digest();
         String fileMd5 = Base64.getEncoder().encodeToString(fileMd5Digest);
         InetSocketAddress inetSocketAddress = new InetSocketAddress(targetIp, Config.FILE_INFO_PORT);
