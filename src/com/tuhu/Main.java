@@ -45,14 +45,13 @@ public class Main {
                     try {
                         send.handleSend(filePath, targetIp);
                     } catch (Exception e) {
+                        e.printStackTrace();
                         if(e instanceof FileNotFoundException){
                             System.out.println("Can't find file!");
                             continue;
                         }
                     }
                 }
-
         }
     }
-
 }

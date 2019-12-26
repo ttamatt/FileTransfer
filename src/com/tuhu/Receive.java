@@ -4,20 +4,21 @@ import com.tuhu.info.ClientInfo;
 import com.tuhu.info.FileInfo;
 import com.tuhu.info.RecordInfo;
 import com.tuhu.info.ServerInfo;
+import com.tuhu.tool.CompressTool;
 import com.tuhu.tool.FileRecordTool;
 import com.tuhu.tool.HandleSerialTool;
 
+import java.io.File;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class Receive{
+public class Receive {
 
     public void run(String outputPath) {
         try {
@@ -37,6 +38,8 @@ public class Receive{
             recordInfo.setBreakPointMap(FileRecordTool.recordMap);
             FileRecordTool.setRecordMap(recordInfo, fileInfo.getFileMd5());
             Long endTime = System.currentTimeMillis();
+            CompressTool.zipExtractFile(outputPath + "/" + fileInfo.getFileName(), outputPath);
+            new File(outputPath + "/" + fileInfo.getFileName()).delete();
             //calculate transferring result message
             double elapsedTime = (double) (endTime - startTime) / 1000;
             System.out.println("Elapsed time:" + elapsedTime + "s");
@@ -83,7 +86,8 @@ public class Receive{
                         while (receiveIndex < clientInfo.getEndPosition() - clientInfo.getStartPosition() && socketChannel.isOpen()) {
                             receiveIndex += fileChannel.transferFrom(socketChannel, clientInfo.getStartPosition(), 2147483648L);
                         }
-//                        System.out.println("start:" + clientInfo.getStartPosition() + "end:" + clientInfo.getEndPosition() + "%:" + receiveIndex / (clientInfo.getEndPosition() - clientInfo.getStartPosition()));
+//                        System.out.println("start:" + clientInfo.getStartPosition() + "end:" + clientInfo.getEndPosition() + "%:" + receiveIndex
+//                        / (clientInfo.getEndPosition() - clientInfo.getStartPosition()));
                         RecordInfo.Block block = new RecordInfo.Block();
                         block.setStartPosition(clientInfo.getStartPosition() + receiveIndex);
                         block.setEndPosition(clientInfo.getEndPosition());
